@@ -11,6 +11,7 @@ go get github.com/Rookiecom/cpuprofile
 使用方法：
 
 ```go
+import "github.com/Rookiecom/cpuprofile"
 
 func main() {
 	cpuprofile.StartCPUProfiler(window, interval)
