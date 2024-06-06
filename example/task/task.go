@@ -1,4 +1,4 @@
-package main
+package task
 
 import (
 	"context"
@@ -35,7 +35,7 @@ func selectPrime(ctx context.Context, c chan int, wg *sync.WaitGroup, enableProf
 	newWg.Wait()
 }
 
-func prime(ctx context.Context, label string, enableProfile bool, externWg *sync.WaitGroup) {
+func Prime(ctx context.Context, label string, enableProfile bool, externWg *sync.WaitGroup) {
 	// 筛法求素数
 	defer externWg.Done()
 	if enableProfile {
@@ -56,7 +56,7 @@ func prime(ctx context.Context, label string, enableProfile bool, externWg *sync
 	wg.Wait()
 }
 
-func mergeSort(ctx context.Context, label string, enableProfile bool, externWg *sync.WaitGroup) {
+func MergeSort(ctx context.Context, label string, enableProfile bool, externWg *sync.WaitGroup) {
 	defer externWg.Done()
 	if enableProfile {
 		defer pprof.SetGoroutineLabels(ctx)
@@ -69,10 +69,10 @@ func mergeSort(ctx context.Context, label string, enableProfile bool, externWg *
 	for i := range array {
 		array[i] = rand.Int()
 	}
-	ParallelMergeSort(ctx, array, enableProfile)
+	parallelMergeSort(ctx, array, enableProfile)
 }
 
-func ParallelMergeSort(ctx context.Context, array []int, enableProfile bool) {
+func parallelMergeSort(ctx context.Context, array []int, enableProfile bool) {
 	if enableProfile {
 		pprof.SetGoroutineLabels(ctx)
 	}
@@ -87,11 +87,11 @@ func ParallelMergeSort(ctx context.Context, array []int, enableProfile bool) {
 	copy(leftArray[0:], array[0:len(array)/2])
 	copy(rightArray[0:], array[len(array)/2:])
 	go func() {
-		ParallelMergeSort(ctx, leftArray, enableProfile)
+		parallelMergeSort(ctx, leftArray, enableProfile)
 		wg.Done()
 	}()
 	go func() {
-		ParallelMergeSort(ctx, rightArray, enableProfile)
+		parallelMergeSort(ctx, rightArray, enableProfile)
 		wg.Done()
 	}()
 	wg.Wait()

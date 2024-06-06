@@ -39,7 +39,7 @@ func (t *testConsumer) testDataHandle(profileData *ProfileData) error {
 }
 
 func TestLoad(t *testing.T) {
-	fmt.Println("并行筛法求素数 20倍负载 和 200倍负载测试开始")
+	fmt.Println("并行筛法求素数 10倍负载 和 100倍负载测试开始")
 	fmt.Println("N倍负载同时启动：------")
 	StartCPUProfiler(time.Duration(1000)*time.Millisecond, time.Duration(500)*time.Millisecond)
 	ParallelConsumer := testConsumer{}
@@ -47,8 +47,8 @@ func TestLoad(t *testing.T) {
 	ParallelConsumer.consumer.StartConsume()
 	ctx := context.Background()
 	wg := sync.WaitGroup{}
-	parallelStartNprime(ctx, 20, &wg)
-	parallelStartNprime(ctx, 200, &wg)
+	parallelStartNprime(ctx, 10, &wg)
+	parallelStartNprime(ctx, 100, &wg)
 	wg.Wait()
 	ParallelConsumer.consumer.StopConsume()
 	for i := range ParallelConsumer.mergeData {

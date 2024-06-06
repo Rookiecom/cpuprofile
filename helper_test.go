@@ -138,6 +138,6 @@ func prime(ctx context.Context, label string, enableProfile bool, externWg *sync
 func parallelStartNprime(ctx context.Context, number int, wg *sync.WaitGroup) {
 	for i := 0; i < number; i++ {
 		wg.Add(1)
-		go prime(ctx, "prime"+" "+strconv.Itoa(number)+"x load", true, wg)
+		go prime(ctx, "prime"+strconv.Itoa(number)+"xload", true, wg)
 	}
 }

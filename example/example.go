@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"main/task"
 	"math/rand"
 	"sync"
 	"time"
@@ -17,7 +20,7 @@ var (
 func main() {
 	cpuprofile.StartCPUProfiler(window, interval) // 采集CPU信息的窗口是window，间隔是interval
 	defer cpuprofile.StopCPUProfiler()
-	consumer := cpuprofile.NewConsumer(handleTaskProfile)
+	consumer := cpuprofile.NewConsumer(task.HandleTaskProfile)
 	consumer.StartConsume()
 	defer consumer.StopConsume()
 	wg := sync.WaitGroup{}
@@ -26,9 +29,9 @@ func main() {
 		wg.Add(1)
 		number := rand.Int()
 		if number%2 == 1 {
-			prime(ctx, "prime", true, &wg)
+			go task.Prime(ctx, "prime", true, &wg)
 		} else {
-			mergeSort(ctx, "mergeSort", true, &wg)
+			go task.MergeSort(ctx, "mergeSort", true, &wg)
 		}
 	}
 	wg.Wait()

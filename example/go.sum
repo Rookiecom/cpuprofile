@@ -1,0 +1,4 @@
+github.com/Rookiecom/cpuprofile v0.0.0-20240606075913-12e4b6befa24 h1:o84METXgf9vM8zE5t9NAWAYdYhw0s62BAnebqDlEiXo=
+github.com/Rookiecom/cpuprofile v0.0.0-20240606075913-12e4b6befa24/go.mod h1:kM4Ruw6IUdSghx0BC+SsnO4qOhcmgVGFO3RE3kfninY=
+github.com/google/pprof v0.0.0-20240528025155-186aa0362fba h1:ql1qNgCyOB7iAEk8JTNM+zJrgIbnyCKX/wdlyPufP5g=
+github.com/google/pprof v0.0.0-20240528025155-186aa0362fba/go.mod h1:K1liHPHnj73Fdn/EKuT8nrFqBihUSKXoLYU0BuatOYo=

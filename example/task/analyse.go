@@ -1,4 +1,4 @@
-package main
+package task
 
 import (
 	"bytes"
@@ -100,7 +100,7 @@ func prinfProfilerInfo(profiles []*tagsProfile) {
 	log.Println("---------------------------------")
 }
 
-func handleTaskProfile(profileData *cpuprofile.ProfileData) error {
+func HandleTaskProfile(profileData *cpuprofile.ProfileData) error {
 	if profileData.Error != nil {
 		return profileData.Error
 	}
