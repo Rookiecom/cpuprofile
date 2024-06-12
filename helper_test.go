@@ -1,95 +1,17 @@
 package cpuprofile
 
 import (
-	"bytes"
 	"context"
-	"errors"
-	"fmt"
+	"math/rand"
 	"runtime/pprof"
 	"sort"
 	"strconv"
-	"strings"
 	"sync"
-
-	"github.com/google/pprof/profile"
 )
 
 const primeBound = 10000
 const minBound = 10
 const arrayLen = 500000
-
-type tagsProfile struct {
-	Key     string
-	Tags    []string
-	Value   int64   // pprof cpu times
-	Percent float64 // <= 1.0
-}
-
-func labelToTags(label map[string][]string) []string {
-	tags := make([]string, 0, len(label)*2)
-	for k, v := range label {
-		tags = append(tags, k, strings.Join(v, ","))
-	}
-	return tags
-}
-
-func tagsToKey(tags []string) string {
-	if len(tags)%2 != 0 {
-		return ""
-	}
-	tagsPair := make([]string, 0, len(tags)/2)
-	for i := 0; i < len(tags); i += 2 {
-		tagsPair = append(tagsPair, fmt.Sprintf("%s=%s", tags[i], tags[i+1]))
-	}
-	// sort tags to make it a unique key
-	sort.Strings(tagsPair)
-	return strings.Join(tagsPair, "|")
-}
-
-func analyse(data *bytes.Buffer) ([]*tagsProfile, error) {
-	// parse protobuf data
-	pf, err := profile.ParseData(data.Bytes())
-	if err != nil {
-		return nil, err
-	}
-
-	// filter cpu value index
-	sampleIdx := -1
-	for idx, st := range pf.SampleType {
-		if st.Type == "cpu" {
-			sampleIdx = idx
-			break
-		}
-	}
-	if sampleIdx < 0 {
-		return nil, errors.New("profiler: sample type not found")
-	}
-
-	// calculate every sample expense
-	counter := map[string]*tagsProfile{}
-	var total int64
-	for _, sm := range pf.Sample {
-		value := sm.Value[sampleIdx]
-		tags := labelToTags(sm.Label)
-		tagsKey := tagsToKey(tags)
-		tp, ok := counter[tagsKey]
-		if !ok {
-			tp = &tagsProfile{}
-			counter[tagsKey] = tp
-			tp.Key = tagsKey
-			tp.Tags = tags
-		}
-		tp.Value += value
-		total += value
-	}
-
-	profiles := make([]*tagsProfile, 0, len(counter))
-	for _, l := range counter {
-		l.Percent = float64(l.Value) / float64(total)
-		profiles = append(profiles, l)
-	}
-	return profiles, nil
-}
 
 func selectPrime(ctx context.Context, c chan int, wg *sync.WaitGroup, enableProfile bool) {
 	if enableProfile {
@@ -114,12 +36,12 @@ func selectPrime(ctx context.Context, c chan int, wg *sync.WaitGroup, enableProf
 	newWg.Wait()
 }
 
-func prime(ctx context.Context, label string, enableProfile bool, externWg *sync.WaitGroup) {
+func prime(ctx context.Context, labelKey string, labelValue string, enableProfile bool, externWg *sync.WaitGroup) {
 	// 筛法求素数, 用作测试任务
 	defer externWg.Done()
 	if enableProfile {
 		defer pprof.SetGoroutineLabels(ctx)
-		ctx = pprof.WithLabels(ctx, pprof.Labels("task", label))
+		ctx = pprof.WithLabels(ctx, pprof.Labels(labelKey, labelValue))
 		pprof.SetGoroutineLabels(ctx)
 	}
 
@@ -138,6 +60,72 @@ func prime(ctx context.Context, label string, enableProfile bool, externWg *sync
 func parallelStartNprime(ctx context.Context, number int, wg *sync.WaitGroup) {
 	for i := 0; i < number; i++ {
 		wg.Add(1)
-		go prime(ctx, "prime"+strconv.Itoa(number)+"xload", true, wg)
+		go prime(ctx, "prime", strconv.Itoa(number)+"xload", true, wg)
+	}
+}
+
+func parallelMergeSort(ctx context.Context, array []int, enableProfile bool) {
+	if enableProfile {
+		pprof.SetGoroutineLabels(ctx)
+	}
+	if len(array) <= minBound {
+		sort.Ints(array)
+		return
+	}
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	leftArray := make([]int, len(array)/2)
+	rightArray := make([]int, len(array)-len(array)/2)
+	copy(leftArray[0:], array[0:len(array)/2])
+	copy(rightArray[0:], array[len(array)/2:])
+	go func() {
+		parallelMergeSort(ctx, leftArray, enableProfile)
+		wg.Done()
+	}()
+	go func() {
+		parallelMergeSort(ctx, rightArray, enableProfile)
+		wg.Done()
+	}()
+	wg.Wait()
+	cnt := 0
+	i := 0
+	j := 0
+	for i < len(array)/2 && j < len(array)-len(array)/2 {
+		if leftArray[i] < rightArray[j] {
+			array[cnt] = leftArray[i]
+			i++
+		} else {
+			array[cnt] = rightArray[j]
+			j++
+		}
+		cnt++
+	}
+	if i < len(array)/2 {
+		copy(array[cnt:], leftArray[i:])
+	} else {
+		copy(array[cnt:], rightArray[j:])
+	}
+}
+
+func MergeSort(ctx context.Context, labelKey string, labelValue string, enableProfile bool, externWg *sync.WaitGroup) {
+	defer externWg.Done()
+	if enableProfile {
+		defer pprof.SetGoroutineLabels(ctx)
+		ctx = pprof.WithLabels(ctx, pprof.Labels(labelKey, labelValue))
+		pprof.SetGoroutineLabels(ctx)
+
+	}
+
+	array := make([]int, arrayLen)
+	for i := range array {
+		array[i] = rand.Int()
+	}
+	parallelMergeSort(ctx, array, enableProfile)
+}
+
+func parallelStartNMergeSort(ctx context.Context, number int, wg *sync.WaitGroup) {
+	for i := 0; i < number; i++ {
+		wg.Add(1)
+		go MergeSort(ctx, "mergeSort", strconv.Itoa(number)+"xload", true, wg)
 	}
 }

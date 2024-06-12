@@ -27,8 +27,8 @@ func profileHTTPHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Disposition", `attachment; filename="profile"`)
 
-	pc := NewCollector(w)
-	err = pc.StartCPUProfile()
+	pc := NewCollector()
+	err = pc.StartCPUProfile(w)
 	if err != nil {
 		serveError(w, http.StatusInternalServerError, "Could not enable CPU profiling: "+err.Error())
 		return
