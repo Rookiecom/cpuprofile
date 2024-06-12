@@ -38,14 +38,6 @@ func newCPUProfiler() *cpuProfiler {
 	}
 }
 
-func RegisterConsumer(ch ProfileConsumer) {
-
-}
-
-func UnRegisterConsumer(ch ProfileConsumer) {
-
-}
-
 func (p *cpuProfiler) register(ch ProfileConsumer) {
 	if ch == nil {
 		return
@@ -83,7 +75,7 @@ func (p *cpuProfiler) start() error {
 	p.wg.Add(1)
 	go p.profilingLoop()
 
-	log.Println("parallel cpu profiler started")
+	log.Println("cpu profiler started")
 	return nil
 }
 

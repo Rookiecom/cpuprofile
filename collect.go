@@ -76,9 +76,9 @@ func (pc *Collector) StopCPUProfile() error {
 // WaitProfilingFinish waits for collecting `seconds` profile data finished.
 func (pc *Collector) readProfileData() {
 	// register cpu profile consumer.
-	RegisterConsumer(pc.dataCh)
+	globalCPUProfiler.register(pc.dataCh)
 	defer func() {
-		UnRegisterConsumer(pc.dataCh)
+		globalCPUProfiler.unregister(pc.dataCh)
 		close(pc.dataCh)
 		close(pc.firstRead)
 		pc.wg.Done()

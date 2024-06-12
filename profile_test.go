@@ -16,7 +16,7 @@ func collectData(totalCPUTimeMs *int, mergeData map[string]int, receiveChan chan
 			break
 		}
 		*totalCPUTimeMs += dataSet.TotalCPUTimeMs
-		for label, val := range dataSet.stats {
+		for label, val := range dataSet.Stats {
 			if _, ok := mergeData[label]; !ok {
 				mergeData[label] = 0
 			}

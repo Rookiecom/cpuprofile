@@ -14,7 +14,7 @@ var globalAggregator = newAggregator()
 
 type DataSetAggregate struct {
 	TotalCPUTimeMs int
-	stats          map[string]int // in milliseconds.
+	Stats          map[string]int // in milliseconds.
 }
 
 type Aggregator struct {
@@ -85,6 +85,7 @@ func (pa *Aggregator) stop() {
 	}
 	pa.cancel()
 	pa.wg.Wait()
+	close(pa.dataCh)
 	log.Println("cpu profile data aggregator stop")
 }
 
@@ -134,16 +135,16 @@ func (pa *Aggregator) handleProfileData(data *ProfileData) {
 			if !ok {
 				dataSet = &DataSetAggregate{
 					TotalCPUTimeMs: 0,
-					stats:          make(map[string]int),
+					Stats:          make(map[string]int),
 				}
 				dataMap[label] = dataSet
 			}
 			digists := s.Label[label]
 			for _, digist := range digists {
-				if _, ok := dataSet.stats[digist]; !ok {
-					dataSet.stats[digist] = 0
+				if _, ok := dataSet.Stats[digist]; !ok {
+					dataSet.Stats[digist] = 0
 				}
-				dataSet.stats[digist] += int(time.Duration(s.Value[idx]).Milliseconds())
+				dataSet.Stats[digist] += int(time.Duration(s.Value[idx]).Milliseconds())
 				dataSet.TotalCPUTimeMs += int(time.Duration(s.Value[idx]).Milliseconds())
 			}
 		}
