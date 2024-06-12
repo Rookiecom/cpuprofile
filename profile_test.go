@@ -3,9 +3,12 @@ package cpuprofile
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/google/pprof/profile"
 )
 
 func collectData(totalCPUTimeMs *int, mergeData map[string]int, receiveChan chan *DataSetAggregate, wg *sync.WaitGroup) {
@@ -58,13 +61,28 @@ func TestLoad(t *testing.T) {
 	collectWg.Wait()
 	fmt.Println("----------- label key = prime -----------")
 	for label, val := range primeMergeData {
-		fmt.Printf("任务：%s\n  CPU使用量：%d ms\n", label, val)
+		fmt.Printf("label value: %s\n  CPU使用量：%d ms\n", label, val)
 	}
 	fmt.Printf("总统计量：%d ms\n", primeTotalCPUTimeMs)
 	fmt.Println("----------- label key = mergeSort -----------")
 	for label, val := range mergeSortMergeDate {
-		fmt.Printf("任务：%s\n  CPU使用量：%d ms\n", label, val)
+		fmt.Printf("label value: %s\n  CPU使用量：%d ms\n", label, val)
 	}
 	fmt.Printf("总统计量：%d ms\n", mergeSortTotalCPUTimeMs)
 	fmt.Println("N倍负载并行测试完成")
+}
+
+func TestWebProfile(t *testing.T) {
+	StartCPUProfiler(1 * time.Second)
+	WebProfile("localhost:6060")
+	address := "http://localhost:6060/debug/pprof/profile"
+	time.Sleep(3 * time.Second) // for server start
+	resp, err := http.Get(address)
+	if err != nil || resp.StatusCode != 200 {
+		t.Fatal("profile http handler test fail" + err.Error())
+	}
+	profileData, err := profile.Parse(resp.Body)
+	if err != nil || profileData == nil {
+		t.Fatal("profile http handler test fail")
+	}
 }
