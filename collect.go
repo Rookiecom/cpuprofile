@@ -80,7 +80,6 @@ func (pc *Collector) readProfileData() {
 	defer func() {
 		globalCPUProfiler.unregister(pc.dataCh)
 		close(pc.dataCh)
-		close(pc.firstRead)
 		pc.wg.Done()
 	}()
 

@@ -112,17 +112,14 @@ func (pa *Aggregator) aggregateProfileData() {
 
 func (pa *Aggregator) handleProfileData(data *ProfileData) {
 	if data.Error != nil {
-		log.Println("data error")
 		return
 	}
 	if len(pa.tags) == 0 {
-		log.Println("no tag to aggratore")
 		return
 	}
 	dataMap := make(map[string]*DataSetAggregate)
 	pf, err := profile.ParseData(data.Data.Bytes())
 	if err != nil {
-		log.Println("parse data error")
 		return
 	}
 	idx := len(pf.SampleType) - 1
