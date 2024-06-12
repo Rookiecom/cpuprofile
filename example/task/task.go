@@ -35,12 +35,12 @@ func selectPrime(ctx context.Context, c chan int, wg *sync.WaitGroup, enableProf
 	newWg.Wait()
 }
 
-func Prime(ctx context.Context, label string, enableProfile bool, externWg *sync.WaitGroup) {
+func Prime(ctx context.Context, labelKey string, labelValue string, enableProfile bool, externWg *sync.WaitGroup) {
 	// 筛法求素数
 	defer externWg.Done()
 	if enableProfile {
 		defer pprof.SetGoroutineLabels(ctx)
-		ctx = pprof.WithLabels(ctx, pprof.Labels("task", label))
+		ctx = pprof.WithLabels(ctx, pprof.Labels(labelKey, labelValue))
 		pprof.SetGoroutineLabels(ctx)
 	}
 
@@ -56,11 +56,11 @@ func Prime(ctx context.Context, label string, enableProfile bool, externWg *sync
 	wg.Wait()
 }
 
-func MergeSort(ctx context.Context, label string, enableProfile bool, externWg *sync.WaitGroup) {
+func MergeSort(ctx context.Context, labelKey string, labelValue string, enableProfile bool, externWg *sync.WaitGroup) {
 	defer externWg.Done()
 	if enableProfile {
 		defer pprof.SetGoroutineLabels(ctx)
-		ctx = pprof.WithLabels(ctx, pprof.Labels("task", label))
+		ctx = pprof.WithLabels(ctx, pprof.Labels(labelKey, labelValue))
 		pprof.SetGoroutineLabels(ctx)
 
 	}
