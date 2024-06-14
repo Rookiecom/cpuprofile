@@ -2,7 +2,6 @@ package cpuprofile
 
 import (
 	"context"
-	"errors"
 	"log"
 	"sync"
 	"time"
@@ -19,19 +18,14 @@ type DataSetAggregate struct {
 
 type Aggregator struct {
 	sync.Mutex
-	ctx     context.Context
-	cancel  context.CancelFunc
-	dataCh  ProfileConsumer
-	wg      sync.WaitGroup
-	started bool
-	tags    map[string]chan *DataSetAggregate
+
+	dataCh ProfileConsumer
+
+	tags map[string]chan *DataSetAggregate
 }
 
 func newAggregator() *Aggregator {
-	ctx, cancel := context.WithCancel(context.Background())
 	return &Aggregator{
-		ctx:    ctx,
-		cancel: cancel,
 		dataCh: make(ProfileConsumer, 1),
 		tags:   make(map[string]chan *DataSetAggregate),
 	}
@@ -45,12 +39,8 @@ func UnRegisterTag(tag string) {
 	globalAggregator.unregisterTag(tag)
 }
 
-func StartAggregator() error {
-	return globalAggregator.start()
-}
-
-func StopAggregator() {
-	globalAggregator.stop()
+func StartAggregator(ctx context.Context) error {
+	return globalAggregator.start(ctx)
 }
 
 func (pa *Aggregator) registerTag(tag string, receiveChan chan *DataSetAggregate) {
@@ -68,38 +58,23 @@ func (pa *Aggregator) unregisterTag(tag string) {
 	delete(pa.tags, tag)
 }
 
-func (pa *Aggregator) start() error {
-	if pa.started {
-		return errors.New("Aggregator already started")
-	}
-	pa.started = true
-	pa.wg.Add(1)
-	go pa.aggregateProfileData()
+func (pa *Aggregator) start(ctx context.Context) error {
+	go pa.aggregateProfileData(ctx)
 	log.Println("cpu profile data aggregator start")
 	return nil
 }
 
-func (pa *Aggregator) stop() {
-	if !pa.started {
-		return
-	}
-	pa.cancel()
-	pa.wg.Wait()
-	close(pa.dataCh)
-	log.Println("cpu profile data aggregator stop")
-}
-
-func (pa *Aggregator) aggregateProfileData() {
+func (pa *Aggregator) aggregateProfileData(ctx context.Context) {
 	// register cpu profile consumer.
 	globalCPUProfiler.register(pa.dataCh)
 	defer func() {
 		globalCPUProfiler.unregister(pa.dataCh)
-		pa.wg.Done()
 	}()
 
 	for {
 		select {
-		case <-pa.ctx.Done():
+		case <-ctx.Done():
+			log.Println("cpu profile data aggregator stop")
 			return
 		case data := <-pa.dataCh:
 			if data == nil {

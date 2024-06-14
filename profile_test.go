@@ -29,13 +29,15 @@ func collectData(totalCPUTimeMs *int, mergeData map[string]int, receiveChan chan
 }
 
 func TestLoad(t *testing.T) {
-	StartCPUProfiler(time.Duration(1000) * time.Millisecond)
-	StartAggregator()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	StartCPUProfiler(ctx, time.Duration(1000)*time.Millisecond)
+	StartAggregator(ctx)
 	primeReceiveChan := make(chan *DataSetAggregate)
 	mergeSortReceiveChan := make(chan *DataSetAggregate)
 	RegisterTag("prime", primeReceiveChan)
 	RegisterTag("mergeSort", mergeSortReceiveChan)
-	ctx := context.Background()
+	// ctx := context.Background()
 	wg := sync.WaitGroup{}
 	primeMergeData := make(map[string]int)
 	mergeSortMergeDate := make(map[string]int)
@@ -56,8 +58,6 @@ func TestLoad(t *testing.T) {
 	close(primeReceiveChan)
 	UnRegisterTag("mergeSort")
 	close(mergeSortReceiveChan)
-	StopAggregator()
-	StopCPUProfiler()
 	collectWg.Wait()
 	fmt.Println("----------- label key = prime -----------")
 	for label, val := range primeMergeData {
@@ -73,7 +73,9 @@ func TestLoad(t *testing.T) {
 }
 
 func TestWebProfile(t *testing.T) {
-	StartCPUProfiler(1 * time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	StartCPUProfiler(ctx, 1*time.Second)
 	WebProfile("localhost:6060")
 	address := "http://localhost:6060/debug/pprof/profile"
 	time.Sleep(3 * time.Second) // for server start

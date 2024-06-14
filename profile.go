@@ -3,14 +3,12 @@ package cpuprofile
 import (
 	"bytes"
 	"context"
-	"errors"
 	"log"
 	"runtime/pprof"
 	"sync"
 	"time"
 )
 
-var errProfilerAlreadyStarted = errors.New("cpuProfiler is already started")
 var globalCPUProfiler = newCPUProfiler()
 var profileWindow = time.Second
 
@@ -22,14 +20,10 @@ type ProfileData struct {
 type ProfileConsumer = chan *ProfileData
 
 type cpuProfiler struct {
-	ctx          context.Context
 	consumers    map[ProfileConsumer]struct{}
 	profileData  *ProfileData
-	cancel       context.CancelFunc
-	wg           sync.WaitGroup
 	lastDataSize int
 	sync.Mutex
-	started bool
 }
 
 func newCPUProfiler() *cpuProfiler {
@@ -57,59 +51,50 @@ func (p *cpuProfiler) unregister(ch ProfileConsumer) {
 }
 
 // StartCPUProfiler uses to start to run the global cpuProfiler.
-func StartCPUProfiler(window time.Duration) error {
+func StartCPUProfiler(ctx context.Context, window time.Duration) error {
 	profileWindow = window
-	return globalCPUProfiler.start()
+	return globalCPUProfiler.start(ctx)
 }
 
-func (p *cpuProfiler) start() error {
-	p.Lock()
-	if p.started {
-		p.Unlock()
-		return errProfilerAlreadyStarted
-	}
-
-	p.started = true
-	p.ctx, p.cancel = context.WithCancel(context.Background())
-	p.Unlock()
-	p.wg.Add(1)
-	go p.profilingLoop()
+func (p *cpuProfiler) start(ctx context.Context) error {
+	go p.profilingLoop(ctx)
 
 	log.Println("cpu profiler started")
+
 	return nil
 }
 
-// StopCPUProfiler uses to stop the global cpuProfiler.
-func StopCPUProfiler() {
-	globalCPUProfiler.stop()
-}
+// // StopCPUProfiler uses to stop the global cpuProfiler.
+// func StopCPUProfiler() {
+// 	globalCPUProfiler.stop()
+// }
 
-func (p *cpuProfiler) stop() {
-	p.Lock()
-	if !p.started {
-		p.Unlock()
-		return
-	}
-	p.started = false
-	if p.cancel != nil {
-		p.cancel()
-	}
-	p.Unlock()
+// func (p *cpuProfiler) stop() {
+// 	p.Lock()
+// 	if !p.started {
+// 		p.Unlock()
+// 		return
+// 	}
+// 	p.started = false
+// 	if p.cancel != nil {
+// 		p.cancel()
+// 	}
+// 	p.Unlock()
 
-	p.wg.Wait()
-	log.Println("cpu profiler stopped")
-}
+// 	p.wg.Wait()
+// 	log.Println("cpu profiler stopped")
+// }
 
-func (p *cpuProfiler) profilingLoop() {
+func (p *cpuProfiler) profilingLoop(ctx context.Context) {
 	checkTicker := time.NewTicker(profileWindow)
 	defer func() {
 		checkTicker.Stop()
 		pprof.StopCPUProfile()
-		p.wg.Done()
 	}()
 	for {
 		select {
-		case <-p.ctx.Done():
+		case <-ctx.Done():
+			log.Println("cpu profiler stopped")
 			return
 		case <-checkTicker.C:
 			p.doProfiling()
