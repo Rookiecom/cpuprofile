@@ -8,5 +8,7 @@ github.com/Rookiecom/cpuprofile v0.0.0-20240612102251-48fd83c39083 h1:Gq9N3Ag+A7
 github.com/Rookiecom/cpuprofile v0.0.0-20240612102251-48fd83c39083/go.mod h1:kM4Ruw6IUdSghx0BC+SsnO4qOhcmgVGFO3RE3kfninY=
 github.com/Rookiecom/cpuprofile v0.0.0-20240612150751-1d111249a6e1 h1:WiZfiWdRGg6OJwsjaf3QPs+/iEOnLLoduA99U9yBge8=
 github.com/Rookiecom/cpuprofile v0.0.0-20240612150751-1d111249a6e1/go.mod h1:kM4Ruw6IUdSghx0BC+SsnO4qOhcmgVGFO3RE3kfninY=
+github.com/Rookiecom/cpuprofile v0.0.0-20240614153714-e13b1ef9aae5 h1:cH1/KLS4QSiNwpa8I7SkUQN+l9uc1cgZ85NyWcM5OjA=
+github.com/Rookiecom/cpuprofile v0.0.0-20240614153714-e13b1ef9aae5/go.mod h1:kM4Ruw6IUdSghx0BC+SsnO4qOhcmgVGFO3RE3kfninY=
 github.com/google/pprof v0.0.0-20240528025155-186aa0362fba h1:ql1qNgCyOB7iAEk8JTNM+zJrgIbnyCKX/wdlyPufP5g=
 github.com/google/pprof v0.0.0-20240528025155-186aa0362fba/go.mod h1:K1liHPHnj73Fdn/EKuT8nrFqBihUSKXoLYU0BuatOYo=

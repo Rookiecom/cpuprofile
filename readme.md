@@ -14,10 +14,10 @@ go get github.com/Rookiecom/cpuprofile
 import "github.com/Rookiecom/cpuprofile"
 
 func main() {
-	cpuprofile.StartCPUProfiler(window) // 采集CPU信息的窗口是window
-	defer cpuprofile.StopCPUProfiler()
-	cpuprofile.StartAggregator()
-	defer cpuprofile.StopAggregator()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	cpuprofile.StartCPUProfiler(ctx, window) // 采集CPU信息的窗口是window
+	cpuprofile.StartAggregator(ctx)
 	receiveChan := make(chan *cpuprofile.DataSetAggregate)
 	cpuprofile.RegisterTag("task", receiveChan) 
 	// 在 aggregator 处注册需要聚合标签 key 为 task 的样本的 CPU 时间

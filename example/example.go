@@ -26,24 +26,23 @@ func handleData(receiveChan chan *cpuprofile.DataSetAggregate, wg *sync.WaitGrou
 		}
 		fmt.Println("----------------------------")
 		for labelVal, cpuTime := range dataSet.Stats {
-			log.Printf("label: %8s cpuTime: %d ms\n", labelVal, cpuTime)
+			log.Printf("label: %10s cpuTime: %d ms\n", labelVal, cpuTime)
 		}
 	}
 	fmt.Println("----------------------------")
 }
 
 func main() {
-	cpuprofile.StartCPUProfiler(window) // 采集CPU信息的窗口是window
-	defer cpuprofile.StopCPUProfiler()
-	cpuprofile.StartAggregator()
-	defer cpuprofile.StopAggregator()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	cpuprofile.StartCPUProfiler(ctx, window) // 采集CPU信息的窗口是window
+	cpuprofile.StartAggregator(ctx)
 	receiveChan := make(chan *cpuprofile.DataSetAggregate)
 	cpuprofile.RegisterTag("task", receiveChan)
 	collectWg := sync.WaitGroup{}
 	collectWg.Add(1)
 	go handleData(receiveChan, &collectWg)
 	wg := sync.WaitGroup{}
-	ctx := context.Background()
 	for i := 0; i < 150; i++ {
 		wg.Add(1)
 		number := rand.Int()

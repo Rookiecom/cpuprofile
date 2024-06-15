@@ -64,26 +64,6 @@ func (p *cpuProfiler) start(ctx context.Context) error {
 	return nil
 }
 
-// // StopCPUProfiler uses to stop the global cpuProfiler.
-// func StopCPUProfiler() {
-// 	globalCPUProfiler.stop()
-// }
-
-// func (p *cpuProfiler) stop() {
-// 	p.Lock()
-// 	if !p.started {
-// 		p.Unlock()
-// 		return
-// 	}
-// 	p.started = false
-// 	if p.cancel != nil {
-// 		p.cancel()
-// 	}
-// 	p.Unlock()
-
-// 	p.wg.Wait()
-// 	log.Println("cpu profiler stopped")
-// }
 
 func (p *cpuProfiler) profilingLoop(ctx context.Context) {
 	checkTicker := time.NewTicker(profileWindow)
