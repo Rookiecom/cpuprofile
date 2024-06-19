@@ -16,8 +16,7 @@ import "github.com/Rookiecom/cpuprofile"
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	cpuprofile.StartCPUProfiler(ctx, window) // 采集CPU信息的窗口是window
-	cpuprofile.StartAggregator(ctx)
+	cpuprofile.StartProfilerAndAggregater(ctx, time.Duration(1000)*time.Millisecond) // 采集CPU信息的窗口是window
 	receiveChan := make(chan *cpuprofile.DataSetAggregate)
 	cpuprofile.RegisterTag("task", receiveChan) 
 	// 在 aggregator 处注册需要聚合标签 key 为 task 的样本的 CPU 时间

@@ -35,8 +35,7 @@ func handleData(receiveChan chan *cpuprofile.DataSetAggregate, wg *sync.WaitGrou
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	cpuprofile.StartCPUProfiler(ctx, window) // 采集CPU信息的窗口是window
-	cpuprofile.StartAggregator(ctx)
+	cpuprofile.StartProfilerAndAggregater(ctx, window) // 采集CPU信息的窗口是window
 	receiveChan := make(chan *cpuprofile.DataSetAggregate)
 	cpuprofile.RegisterTag("task", receiveChan)
 	collectWg := sync.WaitGroup{}

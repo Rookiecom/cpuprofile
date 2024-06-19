@@ -31,8 +31,7 @@ func collectData(totalCPUTimeMs *int, mergeData map[string]int, receiveChan chan
 func TestLoad(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	StartCPUProfiler(ctx, time.Duration(1000)*time.Millisecond)
-	StartAggregator(ctx)
+	StartProfilerAndAggregater(ctx, time.Duration(1000)*time.Millisecond)
 	primeReceiveChan := make(chan *DataSetAggregate)
 	mergeSortReceiveChan := make(chan *DataSetAggregate)
 	RegisterTag("prime", primeReceiveChan)

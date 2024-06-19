@@ -56,6 +56,16 @@ func StartCPUProfiler(ctx context.Context, window time.Duration) error {
 	return globalCPUProfiler.start(ctx)
 }
 
+func StartProfilerAndAggregater(ctx context.Context, window time.Duration) error {
+	profileWindow = window
+	err := globalCPUProfiler.start(ctx)
+	if err != nil {
+		return err
+	}
+	return globalAggregator.start(ctx)
+
+}
+
 func (p *cpuProfiler) start(ctx context.Context) error {
 	go p.profilingLoop(ctx)
 
@@ -63,7 +73,6 @@ func (p *cpuProfiler) start(ctx context.Context) error {
 
 	return nil
 }
-
 
 func (p *cpuProfiler) profilingLoop(ctx context.Context) {
 	checkTicker := time.NewTicker(profileWindow)
