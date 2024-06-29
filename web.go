@@ -52,7 +52,7 @@ func serveError(w http.ResponseWriter, status int, txt string) {
 	w.WriteHeader(status)
 	_, err := fmt.Fprintln(w, txt)
 	if err != nil {
-		log.Printf("write http response error %v", err)
+		// log.Printf("write http response error %v", err)
 	}
 }
 

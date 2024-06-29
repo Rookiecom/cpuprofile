@@ -3,7 +3,6 @@ package cpuprofile
 import (
 	"bytes"
 	"context"
-	"log"
 	"runtime/pprof"
 	"sync"
 	"time"
@@ -69,7 +68,7 @@ func StartProfilerAndAggregater(ctx context.Context, window time.Duration) error
 func (p *cpuProfiler) start(ctx context.Context) error {
 	go p.profilingLoop(ctx)
 
-	log.Println("cpu profiler started")
+	// log.Println("cpu profiler started")
 
 	return nil
 }
@@ -83,7 +82,7 @@ func (p *cpuProfiler) profilingLoop(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("cpu profiler stopped")
+			// log.Println("cpu profiler stopped")
 			return
 		case <-checkTicker.C:
 			p.doProfiling()
@@ -118,7 +117,7 @@ func (p *cpuProfiler) sendToConsumers() {
 	defer func() {
 		p.Unlock()
 		if r := recover(); r != nil {
-			log.Printf("cpu profiler panic: %v", r)
+			// log.Printf("cpu profiler panic: %v", r)
 		}
 	}()
 

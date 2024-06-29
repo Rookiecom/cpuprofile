@@ -2,7 +2,6 @@ package cpuprofile
 
 import (
 	"context"
-	"log"
 	"sync"
 	"time"
 
@@ -60,7 +59,7 @@ func (pa *Aggregator) unregisterTag(tag string) {
 
 func (pa *Aggregator) start(ctx context.Context) error {
 	go pa.aggregateProfileData(ctx)
-	log.Println("cpu profile data aggregator start")
+	// log.Println("cpu profile data aggregator start")
 	return nil
 }
 
@@ -74,7 +73,7 @@ func (pa *Aggregator) aggregateProfileData(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("cpu profile data aggregator stop")
+			// log.Println("cpu profile data aggregator stop")
 			return
 		case data := <-pa.dataCh:
 			if data == nil {
