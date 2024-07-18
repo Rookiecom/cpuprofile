@@ -49,20 +49,14 @@ func (p *cpuProfiler) unregister(ch ProfileConsumer) {
 	p.Unlock()
 }
 
-// StartCPUProfiler uses to start to run the global cpuProfiler.
+// StartProfiler uses to start to run the global cpuProfiler and global aggregater
 func StartCPUProfiler(ctx context.Context, window time.Duration) error {
-	profileWindow = window
-	return globalCPUProfiler.start(ctx)
-}
-
-func StartProfilerAndAggregater(ctx context.Context, window time.Duration) error {
 	profileWindow = window
 	err := globalCPUProfiler.start(ctx)
 	if err != nil {
 		return err
 	}
 	return globalAggregator.start(ctx)
-
 }
 
 func (p *cpuProfiler) start(ctx context.Context) error {

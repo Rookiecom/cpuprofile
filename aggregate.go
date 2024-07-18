@@ -2,13 +2,18 @@ package cpuprofile
 
 import (
 	"context"
+	"sort"
 	"sync"
 	"time"
 
 	"github.com/google/pprof/profile"
 )
 
-var globalAggregator = newAggregator()
+var (
+	globalAggregator       = newAggregator()
+	enableWindowAggregator = false
+	windowAggregator       *WindowAggregator
+)
 
 type DataSetAggregate struct {
 	TotalCPUTimeMs int
@@ -21,6 +26,22 @@ type Aggregator struct {
 	dataCh ProfileConsumer
 
 	tags map[string]chan *DataSetAggregate
+}
+
+type DataSetAggregateMap map[string]*DataSetAggregate
+
+type WindowAggregator struct {
+	sync.Mutex
+	start     int
+	end       int
+	window    int // represents a multiple of the sampling window
+	segData   []DataSetAggregateMap
+	mergeData DataSetAggregateMap
+}
+
+type LabelValueTime struct {
+	LabelValue string
+	Time       int
 }
 
 func newAggregator() *Aggregator {
@@ -38,8 +59,99 @@ func UnRegisterTag(tag string) {
 	globalAggregator.unregisterTag(tag)
 }
 
-func StartAggregator(ctx context.Context) error {
-	return globalAggregator.start(ctx)
+func GetWindowData() DataSetAggregateMap {
+	windowAggregator.Lock()
+	defer windowAggregator.Unlock()
+	ret := DataSetAggregateMap{}
+	for label, mp := range windowAggregator.mergeData {
+		ret[label] = &DataSetAggregate{
+			TotalCPUTimeMs: mp.TotalCPUTimeMs,
+			Stats:          make(map[string]int),
+		}
+		for labelValue, t := range mp.Stats {
+			ret[label].Stats[labelValue] = t
+		}
+	}
+	return ret
+}
+
+func (da DataSetAggregateMap) TopN(num int) []LabelValueTime {
+	var totalData []LabelValueTime
+	for _, mp := range da {
+		for labelValue, t := range mp.Stats {
+			totalData = append(totalData, LabelValueTime{labelValue, t})
+		}
+	}
+	sort.Slice(totalData, func(i, j int) bool {
+		return totalData[i].Time > totalData[j].Time
+	})
+	if len(totalData) >= num {
+		return totalData[0:num]
+	}
+	return totalData
+}
+
+func (da DataSetAggregateMap) TopNWithLabel(num int, label string) []LabelValueTime {
+	var totalData []LabelValueTime
+
+	for labelValue, t := range da[label].Stats {
+		totalData = append(totalData, LabelValueTime{labelValue, t})
+	}
+
+	sort.Slice(totalData, func(i, j int) bool {
+		return totalData[i].Time > totalData[j].Time
+	})
+	if len(totalData) >= num {
+		return totalData[0:num]
+	}
+	return totalData
+}
+
+func EnableWindowAggregator(window int) {
+	enableWindowAggregator = true
+	windowAggregator = &WindowAggregator{
+		start:     0,
+		end:       0,
+		window:    window,
+		segData:   make([]DataSetAggregateMap, window),
+		mergeData: map[string]*DataSetAggregate{},
+	}
+}
+
+func (wa *WindowAggregator) move(dataMap DataSetAggregateMap) {
+	wa.Lock()
+	defer wa.Unlock()
+	if wa.start == wa.end && len(wa.segData[wa.start]) != 0 {
+		for key, dataSet := range wa.segData[wa.start] {
+			mergeDataSet, ok := wa.mergeData[key]
+			if !ok {
+				mergeDataSet = &DataSetAggregate{
+					Stats: make(map[string]int),
+				}
+				wa.mergeData[key] = mergeDataSet
+			}
+			mergeDataSet.TotalCPUTimeMs -= dataSet.TotalCPUTimeMs
+			for k, v := range dataSet.Stats {
+				mergeDataSet.Stats[k] -= v
+			}
+		}
+		wa.start = (wa.start + 1) % wa.window
+	}
+	for key, dataSet := range dataMap {
+		mergeDataSet, ok := wa.mergeData[key]
+		if !ok {
+			mergeDataSet = &DataSetAggregate{
+				Stats: make(map[string]int),
+			}
+			wa.mergeData[key] = mergeDataSet
+		}
+		mergeDataSet.TotalCPUTimeMs += dataSet.TotalCPUTimeMs
+		for k, v := range dataSet.Stats {
+			mergeDataSet.Stats[k] += v
+		}
+	}
+	wa.segData[wa.end] = dataMap
+	wa.end = (wa.end + 1) % wa.window
 }
 
 func (pa *Aggregator) registerTag(tag string, receiveChan chan *DataSetAggregate) {
@@ -88,10 +200,10 @@ func (pa *Aggregator) handleProfileData(data *ProfileData) {
 	if data.Error != nil {
 		return
 	}
-	if len(pa.tags) == 0 {
+	if len(pa.tags) == 0 && !enableWindowAggregator {
 		return
 	}
-	dataMap := make(map[string]*DataSetAggregate)
+	dataMap := make(DataSetAggregateMap)
 	pf, err := profile.ParseData(data.Data.Bytes())
 	if err != nil {
 		return
@@ -99,9 +211,6 @@ func (pa *Aggregator) handleProfileData(data *ProfileData) {
 	idx := len(pf.SampleType) - 1
 	for _, s := range pf.Sample {
 		for label := range s.Label {
-			if _, ok := pa.tags[label]; !ok {
-				continue
-			}
 			dataSet, ok := dataMap[label]
 			if !ok {
 				dataSet = &DataSetAggregate{
@@ -122,6 +231,13 @@ func (pa *Aggregator) handleProfileData(data *ProfileData) {
 	}
 
 	for tag, dataSet := range dataMap {
+		if _, ok := pa.tags[tag]; !ok {
+			continue
+		}
 		pa.tags[tag] <- dataSet
+	}
+
+	if enableWindowAggregator {
+		windowAggregator.move(dataMap)
 	}
 }
