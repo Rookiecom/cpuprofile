@@ -32,6 +32,7 @@ type DataSetAggregateMap map[string]*DataSetAggregate
 
 type WindowAggregator struct {
 	sync.Mutex
+	isLoad    bool
 	start     int
 	end       int
 	window    int // represents a multiple of the sampling window
@@ -110,6 +111,7 @@ func (da DataSetAggregateMap) TopNWithLabel(num int, label string) []LabelValueT
 func EnableWindowAggregator(window int) {
 	enableWindowAggregator = true
 	windowAggregator = &WindowAggregator{
+		isLoad:    false,
 		start:     0,
 		end:       0,
 		window:    window,
@@ -121,7 +123,7 @@ func EnableWindowAggregator(window int) {
 func (wa *WindowAggregator) move(dataMap DataSetAggregateMap) {
 	wa.Lock()
 	defer wa.Unlock()
-	if wa.start == wa.end && len(wa.segData[wa.start]) != 0 {
+	if wa.start == wa.end && wa.isLoad {
 		for key, dataSet := range wa.segData[wa.start] {
 			mergeDataSet, ok := wa.mergeData[key]
 			if !ok {
@@ -152,6 +154,7 @@ func (wa *WindowAggregator) move(dataMap DataSetAggregateMap) {
 	}
 	wa.segData[wa.end] = dataMap
 	wa.end = (wa.end + 1) % wa.window
+	wa.isLoad = true
 }
 
 func (pa *Aggregator) registerTag(tag string, receiveChan chan *DataSetAggregate) {

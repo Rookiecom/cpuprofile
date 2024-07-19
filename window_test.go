@@ -53,12 +53,12 @@ func TestWindowProfile(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	StartCPUProfiler(ctx, time.Second)
-	EnableWindowAggregator(4)
-	startNMatrixT(ctx, 4, true, 6*time.Second, "task", "A")
-	startNMatrixT(ctx, 2, false, 4*time.Second, "task", "B")
-	startNMatrixT(ctx, 1, false, 4*time.Second, "task", "C")
-	for i := 0; i < 12; i++ {
-		time.Sleep(1 * time.Second)
+	EnableWindowAggregator(30)
+	startNMatrixT(ctx, 4, true, 40*time.Second, "task", "A")
+	startNMatrixT(ctx, 2, true, 60*time.Second, "task", "B")
+	startNMatrixT(ctx, 1, true, 60*time.Second, "task", "C")
+	for i := 0; i < 10; i++ {
+		time.Sleep(10 * time.Second)
 		go func() {
 			data := GetWindowData()
 			for label, mp := range data {
